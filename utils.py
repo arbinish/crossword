@@ -10,7 +10,7 @@ def fetch_words() -> Dict:
     words = set([
         'panda', 'apple', 'bus', 'car', 'school', 'thanks', 'noodle', 'egg',
         'rooster', 'ostrich', 'elephant', 'zebra', 'mobile', 'doodle', 'dog',
-        'air', 'truck', 'cat', 'radio', 'ear', 'led', 'hat'
+        'air', 'truck', 'cat', 'radio', 'ear', 'led', 'hat', 'bill'
     ])
     word_lengths = [len(w) for w in words]
     min_word_length, max_word_length = min(word_lengths), max(word_lengths)
@@ -45,64 +45,70 @@ def fit_word(board: List[List[AnyStr]], word: AnyStr, row: int, col: int,
 
 
 def can_fit_word(board: List[List[AnyStr]], word: AnyStr, row: int, col: int,
-                 vertical: bool) -> bool:
+                 is_vertical: bool) -> bool:
+    log = logging.getLogger('can_fit_word')
+
     for letter in word:
         if board[row][col] != 'C' and board[row][col] != letter:
+            log.debug(f'Cannot {alignment_word[is_vertical]} fit {word} at {row}/{col}')
             return False
-        if vertical:
+        if is_vertical:
             row += 1
         else:
             col += 1
+    log.debug(f'{alignment_word[is_vertical]} fit successful at {row}/{col}')
     return True
 
 
 def assign_word_to_board(board: List[List[AnyStr]], word: AnyStr,
-                         vertical: bool) -> Tuple[int, int]:
-    if vertical:
+                         is_vertical: bool) -> Tuple[int, int]:
+    log = logging.getLogger('assign_word_to_board')
+    # try a random cell to fit word
+    if is_vertical:
         row = randint(0, len(board) - 1 - len(word))
         col = randint(0, len(board) - 1)
     else:
         row = randint(0, len(board) - 1)
         col = randint(0, len(board) - 1 - len(word))
-    if can_fit_word(board, word, row, col, vertical):
-        fit_word(board, word, row, col, vertical)
+    if can_fit_word(board, word, row, col, is_vertical):
+        fit_word(board, word, row, col, is_vertical)
+        log.info(f'first {alignment_word[is_vertical]} fit succeeded for {word} on {row}/{col}')
         return row, col
-    tries = len(board)**2
+    max_tries = len(board) ** 2
+    tries = max_tries
     # retry with first cell in current row or column
-    if vertical:
-        row = 0
-    else:
+    if is_vertical:
         col = 0
-    logging.info(
-        f'first {alignment_word[vertical]} fit failed for {word} on {row}/{col}. Attempting iterative approach'
+    else:
+        row = 0
+    log.info(
+        f'first {alignment_word[is_vertical]} fit failed for {word} on {row}/{col}. Attempting iterative approach'
     )
     while tries:
-        if vertical:
+        if is_vertical:
             if row + len(word) > len(board):
-                row -= 1
-                if row < 0:
-                    row = 0
-            row += 1
-            row %= len(board)
+                col += 1
+                col %= len(board)
+                row = 0
         else:
             if col + len(word) > len(board):
-                col -= 1
-                if col < 0:
-                    col = 0
-            col += 1
-            col %= len(board)
-
-        logging.info(f'fitting {word} {alignment_word[vertical]} on {row}/{col}')
-        if can_fit_word(board, word, row, col, vertical):
-            fit_word(board, word, row, col, vertical)
+                row += 1
+                row %= len(board)
+                col = 0
+        log.info(
+            f'fitting {word} {alignment_word[is_vertical]} on {row}/{col} [{len(board)}]'
+        )
+        if can_fit_word(board, word, row, col, is_vertical):
+            fit_word(board, word, row, col, is_vertical)
+            log.info(f'{alignment_word[is_vertical]} fit succeeded for {word} in {max_tries - tries} tries')
             return row, col
-        if vertical:
+        if is_vertical:
             row += 1
         else:
             col += 1
         tries -= 1
-    logging.fatal(f'Exhausted tries: Cannot assign {word}')
-    # return assign_word_to_board(board, word, vertical)
+    log.fatal(f'Exhausted tries: Cannot assign {word}')
+    # return assign_word_to_board(board, word, is_vertical)
 
 
 def assign_words(board: List[List[AnyStr]],
@@ -120,5 +126,4 @@ def assign_words(board: List[List[AnyStr]],
             log.error('Cannot fit word: [%s]', word)
             return False, {}
         board_map[word] = *word_pos, valign
-    logging.info('solution: %s', board_map)
     return True, board_map

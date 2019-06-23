@@ -1,4 +1,5 @@
 from utils import fetch_words, print_board, assign_words
+from pprint import pformat
 import logging
 import sys
 
@@ -18,15 +19,20 @@ def main():
     for size in range(meta_words['max_length'] + 1,
                       meta_words['max_length'] + 10):
         # create a num_words x num_words board
+        logging.info('Attempting new board with size %d', size)
         maze = ['R' for _ in range(size)]
         for row in range(size):
             maze[row] = ['C' for _ in range(size)]
-        if assign_words(maze, meta_words):
-            print_board(maze)
 
-    logging.info(
-        'optimal solution: board size: %d, number of words: %d, max word length: %d',
-        size, num_words, meta_words['max_length'])
+        is_fit, board_map = assign_words(maze, meta_words)
+        if is_fit:
+            print_board(maze)
+            logging.info(
+                'optimal solution: board size: %d, number of words: %d, max word length: %d',
+                size, num_words, meta_words['max_length'])
+            logging.info('board_map: %s', pformat(board_map))
+            return
+    logging.fatal('Cannot find a solution')
 
 
 if __name__ == "__main__":
