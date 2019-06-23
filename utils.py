@@ -65,7 +65,41 @@ def assign_word_to_board(board: List[List[AnyStr]], word: AnyStr,
     if can_fit_word(board, word, row, col, vertical):
         fit_word(board, word, row, col, vertical)
         return row, col
-    return assign_word_to_board(board, word, vertical)
+    tries = len(board) ** 2
+    # retry with first cell in current row or column
+    if vertical:
+        col = 0
+    else:
+        row = 0
+    logging.info(f'first fit failed for {word} on {row}/{col}. Attempting iterative approach')
+    while tries:
+        if vertical:
+            if row + len(word) > len(board):
+                row -= 1
+                if row < 0:
+                    row = 0
+            col += 1
+            col %= len(board)
+        else:
+            if col + len(word) > len(board):
+                col -= 1
+                if col < 0:
+                    col = 0
+            row += 1
+            row %= len(board)
+
+        logging.info(f'fitting {word} on {row}/{col}')
+        if can_fit_word(board, word, row, col, vertical):
+            fit_word(board, word, row, col, vertical)
+            return row, col
+        if vertical:
+            row += 1
+        else:
+            col += 1
+        tries -= 1
+    logging.fatal(f'Exhausted tries: Cannot assign {word}')
+    sys.exit(1)
+        # return assign_word_to_board(board, word, vertical)
 
 
 def assign_words(board: List[List[AnyStr]], meta_words: Dict) -> None:
@@ -78,5 +112,9 @@ def assign_words(board: List[List[AnyStr]], meta_words: Dict) -> None:
     for word in words:
         valign = randint(0, 1)
         log.info(f'assigning {word} in {alignment_word[valign]} order')
-        board_map[word] = *assign_word_to_board(board, word, valign), valign
+        word_pos = assign_word_to_board(board, word, valign)
+        if word_pos is None:
+            log.error('Cannot fit word: [%s]', word)
+            return
+        board_map[word] = *word_pos, valign
     logging.info('solution: %s', board_map)
