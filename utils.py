@@ -70,9 +70,9 @@ def assign_word_to_board(board: List[List[AnyStr]], word: AnyStr,
     tries = len(board)**2
     # retry with first cell in current row or column
     if vertical:
-        col = 0
-    else:
         row = 0
+    else:
+        col = 0
     logging.info(
         f'first {alignment_word[vertical]} fit failed for {word} on {row}/{col}. Attempting iterative approach'
     )
@@ -82,15 +82,15 @@ def assign_word_to_board(board: List[List[AnyStr]], word: AnyStr,
                 row -= 1
                 if row < 0:
                     row = 0
-            col += 1
-            col %= len(board)
+            row += 1
+            row %= len(board)
         else:
             if col + len(word) > len(board):
                 col -= 1
                 if col < 0:
                     col = 0
-            row += 1
-            row %= len(board)
+            col += 1
+            col %= len(board)
 
         logging.info(f'fitting {word} {alignment_word[vertical]} on {row}/{col}')
         if can_fit_word(board, word, row, col, vertical):
