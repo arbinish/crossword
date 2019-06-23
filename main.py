@@ -14,13 +14,19 @@ def main():
     logging.info(meta_words)
     if num_words < meta_words['max_length']:
         num_words = meta_words['max_length'] + 1
-    num_words = 10
-    # create a num_words x num_words board
-    maze = ['R' for _ in range(num_words)]
-    for row in range(num_words):
-        maze[row] = ['C' for _ in range(num_words)]
-    assign_words(maze, meta_words)
-    print_board(maze)
+
+    for size in range(meta_words['max_length'] + 1,
+                      meta_words['max_length'] + 10):
+        # create a num_words x num_words board
+        maze = ['R' for _ in range(size)]
+        for row in range(size):
+            maze[row] = ['C' for _ in range(size)]
+        if assign_words(maze, meta_words):
+            print_board(maze)
+
+    logging.info(
+        'optimal solution: board size: %d, number of words: %d, max word length: %d',
+        size, num_words, meta_words['max_length'])
 
 
 if __name__ == "__main__":
